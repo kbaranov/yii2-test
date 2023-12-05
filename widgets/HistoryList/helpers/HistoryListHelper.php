@@ -2,41 +2,24 @@
 
 namespace app\widgets\HistoryList\helpers;
 
-use app\models\Call;
-use app\models\Customer;
 use app\models\History;
+use app\widgets\HistoryList\helpers\EventStrategy\DefaultEventStrategy;
+use app\widgets\HistoryList\helpers\EventStrategy\EventStrategyInterface;
 
 class HistoryListHelper
 {
-    public static function getBodyByModel(History $model)
+    public static function getBodyByModel(History $model): string
     {
-        switch ($model->event) {
-            case History::EVENT_CREATED_TASK:
-            case History::EVENT_COMPLETED_TASK:
-            case History::EVENT_UPDATED_TASK:
-                $task = $model->task;
-                return "$model->eventText: " . ($task->title ?? '');
-            case History::EVENT_INCOMING_SMS:
-            case History::EVENT_OUTGOING_SMS:
-                return $model->sms->message ? $model->sms->message : '';
-            case History::EVENT_OUTGOING_FAX:
-            case History::EVENT_INCOMING_FAX:
-                return $model->eventText;
-            case History::EVENT_CUSTOMER_CHANGE_TYPE:
-                return "$model->eventText " .
-                    (Customer::getTypeTextByType($model->getDetailOldValue('type')) ?? "not set") . ' to ' .
-                    (Customer::getTypeTextByType($model->getDetailNewValue('type')) ?? "not set");
-            case History::EVENT_CUSTOMER_CHANGE_QUALITY:
-                return "$model->eventText " .
-                    (Customer::getQualityTextByQuality($model->getDetailOldValue('quality')) ?? "not set") . ' to ' .
-                    (Customer::getQualityTextByQuality($model->getDetailNewValue('quality')) ?? "not set");
-            case History::EVENT_INCOMING_CALL:
-            case History::EVENT_OUTGOING_CALL:
-                /** @var Call $call */
-                $call = $model->call;
-                return ($call ? $call->totalStatusText . ($call->getTotalDisposition(false) ? " <span class='text-grey'>" . $call->getTotalDisposition(false) . "</span>" : "") : '<i>Deleted</i> ');
-            default:
-                return $model->eventText;
-        }
+        $strategy = self::getStrategy($model->event->strategy);
+        $context = new EventContext($strategy);
+        return $context->getBody($model);
+    }
+
+    private static function getStrategy(string $strategy): EventStrategyInterface
+    {
+        $className = 'app\\widgets\\HistoryList\\helpers\\EventStrategy\\'
+            . implode('', array_map('ucfirst', explode('_', $strategy))) . 'EventStrategy';
+
+        return class_exists($className) ? new $className() : new DefaultEventStrategy();
     }
 }

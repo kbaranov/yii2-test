@@ -62,7 +62,8 @@ class HistorySearch extends History
             return $dataProvider;
         }
 
-        $query->addSelect('history.*');
+        $query->alias('h');
+        $query->addSelect(['h.ins_ts', 'h.user_id', 'h.object', 'h.event_id', 'h.message', 'h.object_id']);
         $query->with([
             'customer',
             'user',
