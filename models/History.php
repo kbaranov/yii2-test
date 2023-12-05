@@ -13,17 +13,18 @@ use yii\db\ActiveRecord;
  * @property integer $id
  * @property string $ins_ts
  * @property integer $customer_id
- * @property string $event
+ * @property integer $user_id
+ * @property integer $event_id
  * @property string $object
  * @property integer $object_id
  * @property string $message
  * @property string $detail
- * @property integer $user_id
  *
  * @property string $eventText
  *
  * @property Customer $customer
  * @property User $user
+ * @property Event $event
  *
  * @property Task $task
  * @property Sms $sms
@@ -32,22 +33,6 @@ use yii\db\ActiveRecord;
 class History extends ActiveRecord
 {
     use ObjectNameTrait;
-
-    const EVENT_CREATED_TASK = 'created_task';
-    const EVENT_UPDATED_TASK = 'updated_task';
-    const EVENT_COMPLETED_TASK = 'completed_task';
-
-    const EVENT_INCOMING_SMS = 'incoming_sms';
-    const EVENT_OUTGOING_SMS = 'outgoing_sms';
-
-    const EVENT_INCOMING_CALL = 'incoming_call';
-    const EVENT_OUTGOING_CALL = 'outgoing_call';
-
-    const EVENT_INCOMING_FAX = 'incoming_fax';
-    const EVENT_OUTGOING_FAX = 'outgoing_fax';
-
-    const EVENT_CUSTOMER_CHANGE_TYPE = 'customer_change_type';
-    const EVENT_CUSTOMER_CHANGE_QUALITY = 'customer_change_quality';
 
     /**
      * @inheritdoc
@@ -64,12 +49,13 @@ class History extends ActiveRecord
     {
         return [
             [['ins_ts'], 'safe'],
-            [['customer_id', 'object_id', 'user_id'], 'integer'],
-            [['event'], 'required'],
+            [['customer_id', 'object_id', 'user_id', 'event_id'], 'integer'],
+            [['event_id'], 'required'],
             [['message', 'detail'], 'string'],
-            [['event', 'object'], 'string', 'max' => 255],
+            [['object'], 'string', 'max' => 255],
             [['customer_id'], 'exist', 'skipOnError' => true, 'targetClass' => Customer::class, 'targetAttribute' => ['customer_id' => 'id']],
             [['user_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::class, 'targetAttribute' => ['user_id' => 'id']],
+            [['event_id'], 'exist', 'skipOnError' => true, 'targetClass' => Event::class, 'targetAttribute' => ['event_id' => 'id']],
         ];
     }
 
@@ -82,7 +68,7 @@ class History extends ActiveRecord
             'id' => Yii::t('app', 'ID'),
             'ins_ts' => Yii::t('app', 'Ins Ts'),
             'customer_id' => Yii::t('app', 'Customer ID'),
-            'event' => Yii::t('app', 'Event'),
+            'event_id' => Yii::t('app', 'Event'),
             'object' => Yii::t('app', 'Object'),
             'object_id' => Yii::t('app', 'Object ID'),
             'message' => Yii::t('app', 'Message'),
@@ -108,46 +94,20 @@ class History extends ActiveRecord
     }
 
     /**
-     * @return array
+     * @return ActiveQuery
      */
-    public static function getEventTexts()
+    public function getEvent()
     {
-        return [
-            self::EVENT_CREATED_TASK => Yii::t('app', 'Task created'),
-            self::EVENT_UPDATED_TASK => Yii::t('app', 'Task updated'),
-            self::EVENT_COMPLETED_TASK => Yii::t('app', 'Task completed'),
-
-            self::EVENT_INCOMING_SMS => Yii::t('app', 'Incoming message'),
-            self::EVENT_OUTGOING_SMS => Yii::t('app', 'Outgoing message'),
-
-            self::EVENT_CUSTOMER_CHANGE_TYPE => Yii::t('app', 'Type changed'),
-            self::EVENT_CUSTOMER_CHANGE_QUALITY => Yii::t('app', 'Property changed'),
-
-            self::EVENT_OUTGOING_CALL => Yii::t('app', 'Outgoing call'),
-            self::EVENT_INCOMING_CALL => Yii::t('app', 'Incoming call'),
-
-            self::EVENT_INCOMING_FAX => Yii::t('app', 'Incoming fax'),
-            self::EVENT_OUTGOING_FAX => Yii::t('app', 'Outgoing fax'),
-        ];
+        return $this->hasOne(Event::class, ['id' => 'event_id']);
     }
 
     /**
-     * @param $event
-     * @return mixed
+     * @return string
      */
-    public static function getEventTextByEvent($event)
+    public function getEventText(): string
     {
-        return static::getEventTexts()[$event] ?? $event;
+        return $this->event->title;
     }
-
-    /**
-     * @return mixed|string
-     */
-    public function getEventText()
-    {
-        return static::getEventTextByEvent($this->event);
-    }
-
 
     /**
      * @param $attribute

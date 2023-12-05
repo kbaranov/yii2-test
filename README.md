@@ -26,3 +26,11 @@
 5. Какие проблемы вы считаете первостепенными.
 6. Насколько ваш подход будет удобен в поддержке и развитии.
 7. Решение проблемы с экспортом в случае больших данных
+
+## Installation
+
+It's very easy to run a project locally.
+
+Just say `make first` to up all the necessary docker containers, update dependencies and apply database migrations.
+
+Other hot commands you can find in Makefile.

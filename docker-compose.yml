@@ -15,6 +15,8 @@ services:
       - mysql
     depends_on:
       - mysql
+    networks:
+      - yii2-app-network
 
   mysql:
     image: mariadb:10.5.2
@@ -26,3 +28,23 @@ services:
       - "dbdata_mysql_maria:/var/lib/mysql"
     ports:
       - 127.0.0.1:3503:3306
+    networks:
+      - yii2-app-network
+
+  nginx:
+    image: nginx:latest
+    container_name: yii2-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./web:/var/www/web
+      - ./nginx:/etc/nginx/conf.d
+    depends_on:
+      - php
+      - mysql
+    networks:
+      - yii2-app-network
+
+networks:
+  yii2-app-network:
+    driver: bridge
